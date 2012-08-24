@@ -8,8 +8,11 @@ CONFIG = {
   'version' => "0.2.13",
   'themes' => File.join(SOURCE, "_includes", "themes"),
   'layouts' => File.join(SOURCE, "_layouts"),
-  'posts' => File.join(SOURCE, "_posts"),
+  'posts' => File.join(SOURCE, "_posts/blog"),
   'post_ext' => "md",
+  'recipes' => File.join(SOURCE, "_posts/recipes"),
+  'recipe_ext' => "md",
+  'recipe_assets' => File.join("OL","recipes"),
   'theme_package_version' => "0.1.0"
 }
 
@@ -56,6 +59,8 @@ task :post do
   if File.exist?(filename)
     abort("rake aborted!") if ask("#{filename} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
   end
+
+
   
   puts "Creating new post: #{filename}"
   open(filename, 'w') do |post|
@@ -63,12 +68,59 @@ task :post do
     post.puts "layout: post"
     post.puts "title: \"#{title.gsub(/-/,' ')}\""
     post.puts 'description: ""'
-    post.puts "category: "
+    post.puts "category: blog"
     post.puts "tags: []"
     post.puts "---"
     post.puts "{% include JB/setup %}"
   end
 end # task :post
+
+# Usage: rake recipe title="A Title" [date="2012-02-09"]
+desc "Begin a new recipe in #{CONFIG['recipes']}"
+task :recipe do
+  abort("rake aborted: '#{CONFIG['recpipes']}' directory not found.") unless FileTest.directory?(CONFIG['recipes'])
+  title = ENV["title"] || "new-recipe"
+  slug = title.downcase.strip.gsub(' ', '-').gsub(/[^\w-]/, '')
+  begin
+    date = (ENV['date'] ? Time.parse(ENV['date']) : Time.now).strftime('%Y-%m-%d')
+  rescue Exception => e
+    puts "Error - date format must be YYYY-MM-DD, please check you typed it correctly!"
+    exit -1
+  end
+  filename = File.join(CONFIG['recipes'], "#{date}-#{slug}.#{CONFIG['recipe_ext']}")
+  if File.exist?(filename)
+    abort("rake aborted!") if ask("#{filename} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
+  end
+  assetfile = File.join(CONFIG['recipe_assets'], "#{date}-#{slug}.js")
+
+  puts "Creating new recipe: #{filename}"
+  open(filename, 'w') do |recipe|
+    recipe.puts "---"
+    recipe.puts "layout: recipe"
+    recipe.puts "title: \"#{title.gsub(/-/,' ')}\""
+    recipe.puts 'description: ""'
+    recipe.puts "category: recipes"
+    recipe.puts "tags: []"
+    recipe.puts "---"
+    recipe.puts "{% include JB/setup %}"
+    recipe.puts ""
+    recipe.puts "### Demo"
+    recipe.puts "<!-- map to demo the code -->"
+    recipe.puts "<div class=\"smallmap\" id=\"map\">"
+    recipe.puts "</div>"
+    recipe.puts "<!-- code loaded from recipe metadata -->"
+    recipe.puts "<script type=\"text/javascript\">"
+    recipe.puts "{% include #{assetfile} %}"
+    recipe.puts "</script>"
+    recipe.puts ""
+    recipe.puts "### Code"
+    recipe.puts "{% highlight javascript linenos %}{% include #{assetfile} %}{% endhighlight %}"
+    recipe.puts ""
+    recipe.puts "### How it works"
+    recipe.puts ""
+    recipe.puts "..."
+  end
+end # task :recipe
 
 # Usage: rake page name="about.html"
 # You can also specify a sub-directory path.
