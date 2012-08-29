@@ -1,5 +1,5 @@
 <div class="page-header">
-  <h1>{{ page.title }} <small>Supporting tagline</small></h1>
+  <h1>{{ page.title }} <br/><small>{{ page.goal }}</small></h1>
 </div>
 
 <div class="row">
@@ -27,8 +27,10 @@
   
   <div class="span4">
     <h4>Published</h4>
-    <div class="date"><span>{{ page.date | date_to_long_string }}</span></div>
-
+    On <em><span class="date">{{ page.date | date_to_long_string }}</span></em> <br/>
+    By <em>{{ page.author_name }}</em> {% if page.author_twitter %}<a href="https://twitter.com/{{ page.author_twitter }}">{{ page.author_twitter }}</a>{% endif %}
+  </div>
+  <div class="span4">
   {% unless page.tags == empty %}
     <h4>Tags</h4>
     <ul class="tag_box">
