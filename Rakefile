@@ -78,7 +78,8 @@ end # task :post
 # Usage: rake recipe title="A Title" [date="2012-02-09"]
 desc "Begin a new recipe in #{CONFIG['recipes']}"
 task :recipe do
-  abort("rake aborted: '#{CONFIG['recpipes']}' directory not found.") unless FileTest.directory?(CONFIG['recipes'])
+  abort("rake aborted: '#{CONFIG['recpipes']}' directory not found.") unless FileTest.directory?(CONFIG['recipes']) 
+  abort("rake aborted: '#{CONFIG['recipe_assets']}' directory not found.") unless FileTest.directory?(File.join(SOURCE, "_includes",CONFIG['recipe_assets']))
   title = ENV["title"] || "new-recipe"
   slug = title.downcase.strip.gsub(' ', '-').gsub(/[^\w-]/, '')
   begin
@@ -87,20 +88,29 @@ task :recipe do
     puts "Error - date format must be YYYY-MM-DD, please check you typed it correctly!"
     exit -1
   end
+
   filename = File.join(CONFIG['recipes'], "#{date}-#{slug}.#{CONFIG['recipe_ext']}")
   if File.exist?(filename)
     abort("rake aborted!") if ask("#{filename} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
   end
-  assetfile = File.join(CONFIG['recipe_assets'], "#{date}-#{slug}.js")
+  
+  jekyllassetfile = File.join(CONFIG['recipe_assets'], "#{date}-#{slug}.js")
+  assetfile = File.join(SOURCE, "_includes",jekyllassetfile)
+
+  if File.exist?(assetfile)
+    abort("rake aborted!") if ask("#{assetfile} already exists. Do you want to overwrite?", ['y', 'n']) == 'n'
+  end
 
   puts "Creating new recipe: #{filename}"
   open(filename, 'w') do |recipe|
     recipe.puts "---"
     recipe.puts "layout: recipe"
     recipe.puts "title: \"#{title.gsub(/-/,' ')}\""
-    recipe.puts 'description: ""'
+    recipe.puts 'description: "What\'s this all about?"'
     recipe.puts "category: recipes"
-    recipe.puts "tags: []"
+    recipe.puts "tags: [some, comma, sepparated, tags]"
+    recipe.puts "author_name: Your Name"
+    recipe.puts "author_twitter: Your twitter id (remove if don't apply)"
     recipe.puts "---"
     recipe.puts "{% include JB/setup %}"
     recipe.puts ""
@@ -110,15 +120,20 @@ task :recipe do
     recipe.puts "</div>"
     recipe.puts "<!-- code loaded from recipe metadata -->"
     recipe.puts "<script type=\"text/javascript\">"
-    recipe.puts "{% include #{assetfile} %}"
+    recipe.puts "{% include #{jekyllassetfile} %}"
     recipe.puts "</script>"
     recipe.puts ""
     recipe.puts "### Code"
-    recipe.puts "{% highlight javascript linenos %}{% include #{assetfile} %}{% endhighlight %}"
+    recipe.puts "{% highlight javascript linenos %}{% include #{jekyllassetfile} %}{% endhighlight %}"
     recipe.puts ""
     recipe.puts "### How it works"
     recipe.puts ""
     recipe.puts "..."
+  end
+
+  puts "Creating JavaScript recipe code file: #{assetfile}"
+  open(assetfile,'w') do |recipe|
+    recipe.puts "/* Place the code for your recipe on this file */"
   end
 end # task :recipe
 
